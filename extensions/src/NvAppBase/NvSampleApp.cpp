@@ -47,6 +47,10 @@
 #include <stdarg.h>
 #include <sstream>
 
+using namespace CSI;
+using namespace CSI::PureWeb;
+using namespace CSI::PureWeb::Server;
+
 NvSampleApp::NvSampleApp(NvPlatformContext* platform, const char* appTitle) : 
     NvAppBase(platform, appTitle)
     , mFramerate(0L)
@@ -196,6 +200,11 @@ void NvSampleApp::baseInitRendering(void) {
 
     initRendering();
     baseInitUI();
+
+	//Initialize PureWeb State Manager Server
+	m_pServer = new CSI::PureWeb::Server::StateManagerServer();
+	m_pStateManager = new CSI::PureWeb::Server::StateManager("ogl");
+	m_pServer->Start(m_pStateManager.get());
 }
 
 void NvSampleApp::baseInitUI(void) {
@@ -928,6 +937,16 @@ void NvSampleApp::baseShutdownRendering(void) {
     mTweakTab = NULL;
 
     shutdownRendering();
+
+	// make sure server stops
+    m_pServer->Stop(CSI::TimeSpan::FromMilliseconds(250));
+
+	// release server and state manager objects before uninitializing CSI library
+    m_pServer = NULL;
+    m_pStateManager = NULL;
+
+    // Uninitialize CSI / PureWeb libraries
+    CSI::Library::Uninitialize();
 }
 
 void NvSampleApp::logTestResults(float frameRate, int32_t frames) {
@@ -989,3 +1008,28 @@ void NvSampleApp::logTestResults(float frameRate, int32_t frames) {
     delete[] data;
 }
 
+/*
+=============
+PureWeb::IRenderedView
+=============
+*/
+void NvSampleApp::SetClientSize(Size clientSize){
+}
+
+Size NvSampleApp::GetActualSize(){
+	CSI::PureWeb::Size sz = Size(m_windowWidth, m_windowHeight);
+	return sz;
+}
+
+void NvSampleApp::RenderView(PureWeb::Server::RenderTarget target){
+	glReadBuffer(GL_BACK);
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*)target.RenderTargetImage().ImageBytes().begin());		
+}
+
+void NvSampleApp::PostKeyEvent(const Ui::PureWebKeyboardEventArgs& keyEvent){
+
+}
+
+void NvSampleApp::PostMouseEvent(const Ui::PureWebMouseEventArgs& mouseEvent){
+}

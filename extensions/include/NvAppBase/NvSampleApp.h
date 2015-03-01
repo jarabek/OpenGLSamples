@@ -38,6 +38,7 @@
 
 #include <NvFoundation.h>
 
+
 #include "NvAppBase.h"
 #include "NV/NvStopWatch.h"
 #include "NvGLAppContext.h"
@@ -46,6 +47,8 @@
 #include "NvUI/NvUI.h"
 #include "NvUI/NvTweakVar.h"
 #include <map>
+
+#include "pureweb.h"
 
 /// \file
 /// Sample app base class.
@@ -57,7 +60,7 @@ class NvTweakBar;
 
 /// Base class for sample apps.
 /// Adds numerous features to NvAppBase that are of use to most or all sample apps
-class NvSampleApp : public NvAppBase 
+class NvSampleApp : public NvAppBase, public CSI::PureWeb::Server::IRenderedView 
 {
 public:
     /// Constructor
@@ -176,6 +179,23 @@ public:
     /// This should be queried on a per-frame basis.  It may change every frame
     /// \return the GL ID of the main, "onscreen" FBO
     GLuint getMainFBO() const { return mMainFBO; }
+		
+	// a counted pointer to the state manager
+    CSI::CountedPtr<CSI::PureWeb::Server::StateManagerServer> m_pServer;
+
+    // the state manager itself
+    CSI::CountedPtr<CSI::PureWeb::Server::StateManager> m_pStateManager;
+	static CSI::PureWeb::Server::StateManager& StateManager()
+    {
+        return *CSI::PureWeb::Server::StateManager::Instance();
+    }
+
+	// PureWeb::IRenderedView
+    void SetClientSize(CSI::PureWeb::Size clientSize);
+    CSI::PureWeb::Size GetActualSize();
+    void RenderView(CSI::PureWeb::Server::RenderTarget target);
+    void PostKeyEvent(const CSI::PureWeb::Ui::PureWebKeyboardEventArgs& keyEvent);
+    void PostMouseEvent(const CSI::PureWeb::Ui::PureWebMouseEventArgs& mouseEvent);
 
 #ifdef _WIN32
 	void* operator new(size_t size) {
